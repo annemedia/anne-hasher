@@ -479,7 +479,7 @@ void mshabal_close_avx2(mshabal256_context *sc, unsigned ub0, unsigned ub1, unsi
     }
 }
 
-// Shabal routines optimized for plotting and hashing
+// Shabal routines optimized for hashing and hashing
 void mshabal_hash_fast_avx2(mshabal256_context_fast *sc, void *message, void *termination,
                                     void *dst, unsigned num) {
     union input {

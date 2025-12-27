@@ -701,7 +701,7 @@ void mshabal_close_avx512f(mshabal512_context *sc, unsigned ub0, unsigned ub1, u
     }
 }
 
-// Shabal routine optimized for plotting and hashing
+// Shabal routine optimized for hashing and hashing
 void mshabal_hash_fast_avx512f(mshabal512_context_fast *sc, void *message, void *termination,
                                     void *dst, unsigned num) {
     union input {

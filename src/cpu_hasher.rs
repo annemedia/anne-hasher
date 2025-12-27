@@ -98,7 +98,6 @@ pub fn hash_cpu(
     hasher_task: CpuTask,
     simd_ext: SimdExtension,
 ) -> impl FnOnce() + Send + 'static {
-    // Convert raw pointer to usize which implements Send
     let cache_ptr_as_usize = hasher_task.cache.ptr as usize;
     let cache_size = hasher_task.cache_size;
     let chunk_offset = hasher_task.chunk_offset;
@@ -107,7 +106,6 @@ pub fn hash_cpu(
     let local_nonces = hasher_task.local_nonces;
     
     move || {
-        // Convert back from usize to raw pointer
         let cache_ptr = cache_ptr_as_usize as *mut u8;
         
         unsafe {
@@ -159,12 +157,10 @@ pub fn hash_cpu(
                 }
             }
         }
-        // report hashing done
-        tx.send((0u8, 1u8, 0))
-            .expect("CPU task can't communicate with scheduler thread.");
-        // report data in hostmem
-        tx.send((0u8, 0u8, local_nonces))
-            .expect("CPU task can't communicate with scheduler thread.");
+
+        // Gracefully handle channel send errors (scheduler may have exited)
+        let _ = tx.send((0u8, 1u8, 0));
+        let _ = tx.send((0u8, 0u8, local_nonces));
     }
 }
 
@@ -174,7 +170,7 @@ mod test {
     use self::crypto::digest::Digest;
     use self::crypto::sha2::Sha256;
     use super::*;
-    use crate::plotter;
+    use crate::hasher;
 
     #[test]
     fn test_noncegen() {
@@ -189,7 +185,7 @@ mod test {
         };
 
         if is_x86_feature_detected!("avx512f") {
-            let mut buf = vec![0; 32 * plotter::NONCE_SIZE as usize];
+            let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
                 init_shabal_avx512f();
                 noncegen_avx512f(
@@ -205,7 +201,7 @@ mod test {
         }
 
         if is_x86_feature_detected!("avx2") {
-            let mut buf = vec![0; 32 * plotter::NONCE_SIZE as usize];
+            let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
                 init_shabal_avx2();
                 noncegen_avx2(
@@ -221,7 +217,7 @@ mod test {
         }
 
         if is_x86_feature_detected!("avx") {
-            let mut buf = vec![0; 32 * plotter::NONCE_SIZE as usize];
+            let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
                 init_shabal_avx();
                 noncegen_avx(
@@ -237,7 +233,7 @@ mod test {
         }
 
         if is_x86_feature_detected!("sse2") {
-            let mut buf = vec![0; 32 * plotter::NONCE_SIZE as usize];
+            let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
                 init_shabal_sse2();
                 noncegen_sse2(
@@ -252,7 +248,7 @@ mod test {
             check_result(&buf);
         }
 
-        let mut buf = vec![0; 32 * plotter::NONCE_SIZE as usize];
+        let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
         noncegen_rust(&mut buf, 0, numeric_id, start_nonce, 32);
         check_result(&buf);
     }

@@ -540,7 +540,7 @@ void sph_shabal256_addbits_and_close(void* cc, unsigned ub, unsigned n, void* ds
     shabal_close(cc, ub, n, dst, 8);
 }
 
-// Shabal routines optimized for plotting and hashing
+// Shabal routines optimized for hashing and hashing
 void sph_shabal_hash_fast(void *message, void *termination, void* dst, unsigned num) {
     sph_u32
         A00 = A_init_256[0], A01 = A_init_256[1], A02 = A_init_256[2], A03 = A_init_256[3],

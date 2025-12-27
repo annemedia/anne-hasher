@@ -118,7 +118,7 @@ void sph_shabal256_close(void* cc, void* dst);
 void sph_shabal256_addbits_and_close(void* cc, unsigned ub, unsigned n, void* dst);
 
 /*
- * optimised Shabal routine for PoC plotting and hashing
+ * optimised Shabal routine for PoST hashing
  */
 void sph_shabal_hash_fast(void *message, void *termination, void* dst, unsigned num);
 

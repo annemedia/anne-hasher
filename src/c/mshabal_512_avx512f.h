@@ -174,7 +174,7 @@ void mshabal_close_avx512f(mshabal512_context *sc, unsigned ub0, unsigned ub1, u
                       void *dst12, void *dst13, void *dst14, void *dst15);
 
 /*
- * optimised Shabal routine for PoC plotting and hashing
+ * optimised Shabal routine for PoST hashing
  */
 void mshabal_hash_fast_avx512f(mshabal512_context_fast *sc, void *message, void *termination,
                                void *dst, unsigned len);

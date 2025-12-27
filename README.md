@@ -1,4 +1,4 @@
-# ANNE Plotter
+# ANNE Hasher
 
 ## Features
 - windows, linux, unix & macOS
@@ -9,14 +9,14 @@
 
 ## Binary files
 
-https://github.com/annemedia/anne-plotter/releases
+https://github.com/annemedia/anne-hasher/releases
 
 ## Running the binaries
 
 This is a command line tool, download the executable for your system and run it in a command prompt:
 
 ```shell
-./anne-plotter --help
+./anne-hasher --help
 ```
 
 ## Build from Sources

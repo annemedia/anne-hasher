@@ -1,7 +1,26 @@
 extern crate cc;
+extern crate winres;
 
 fn main() {
     let mut base = cc::Build::new();
+    if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
+        let mut res = winres::WindowsResource::new();
+        res.set_manifest(r#"
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>
+        "#);
+        if let Err(e) = res.compile() {
+            eprintln!("Error compiling Windows resource: {}", e);
+            std::process::exit(1);
+        }
+    }
 
     // Only add MSVC optimization flags when the target is actually MSVC
     // (GitHub Actions Windows uses GNU/MinGW, so skip them there)

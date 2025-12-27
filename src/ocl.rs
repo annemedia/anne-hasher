@@ -1,8 +1,9 @@
+
 use self::core::{
     ArgVal, ContextProperties, DeviceInfo, Event, KernelWorkGroupInfo, PlatformInfo, Status,
 };
 use crate::gpu_hasher::GpuTask;
-use crate::plotter::{NONCE_SIZE, NUM_SCOOPS, SCOOP_SIZE};
+use crate::hasher::{NONCE_SIZE, NUM_SCOOPS, SCOOP_SIZE};
 use ocl_core as core;
 use rayon::prelude::*;
 use std::cmp::min;
@@ -12,12 +13,19 @@ use std::slice::{from_raw_parts, from_raw_parts_mut};
 use std::sync::{Arc, Mutex};
 use std::u64;
 
+#[cfg(feature = "opencl")]
+#[derive(Clone)]
+pub struct GpuInfo {
+    pub spec: String,
+    pub name: String,
+    pub vendor: String,
+}
+
 static SRC: &'static str = include_str!("ocl/kernel.cl");
 
 const GPU_HASHES_PER_RUN: usize = 32;
 const MSHABAL512_VECTOR_SIZE: u64 = 16;
 
-// convert the info or error to a string for printing:
 macro_rules! to_string {
     ($expr:expr) => {
         match $expr {
@@ -45,7 +53,6 @@ pub struct GpuContext {
     pub worksize: usize,
 }
 
-// Ohne Gummi im Bahnhofsviertel... das wird noch Konsequenzen haben
 unsafe impl Sync for GpuContext {}
 
 impl GpuContext {
@@ -82,8 +89,6 @@ impl GpuContext {
         let gdim1 = [worksize, 1, 1];
         let ldim1 = [kernel_workgroup_size, 1, 1];
 
-        // create buffers
-        // mapping = zero copy buffers, no mapping = pinned memory for fast DMA.
         if mapping {
             let buffer_gpu_a = unsafe {
                 core::create_buffer::<_, u8>(
@@ -225,6 +230,25 @@ pub fn platform_info() {
     }
 }
 
+#[cfg(feature = "opencl")]
+pub fn get_gpu_list() -> Vec<GpuInfo> {
+    let mut list = vec![];
+    if let Ok(platform_ids) = core::get_platform_ids() {
+        for (i, platform_id) in platform_ids.iter().enumerate() {
+            if let Ok(device_ids) = core::get_device_ids(platform_id, None, None) {
+                for (j, device_id) in device_ids.iter().enumerate() {
+                    let cores = get_cores(*device_id);
+                    let spec = format!("{}:{}:{}", i, j, cores);
+                    let vendor = to_string!(core::get_device_info(device_id, DeviceInfo::Vendor));
+                    let name = to_string!(core::get_device_info(device_id, DeviceInfo::Name));
+                    list.push(GpuInfo { spec, name, vendor });
+                }
+            }
+        }
+    }
+    list
+}
+
 fn get_cores(device: core::DeviceId) -> u32 {
     match core::get_device_info(device, DeviceInfo::MaxComputeUnits).unwrap() {
         core::DeviceInfoResult::MaxComputeUnits(mcu) => mcu,
@@ -232,8 +256,7 @@ fn get_cores(device: core::DeviceId) -> u32 {
     }
 }
 
-
-pub fn gpu_get_info(gpus: &[String], quiet: bool) -> u64 {
+pub fn gpu_get_info(gpus: &[String]) -> u64 {
     let mut total_mem_needed = 0u64;
     for gpu in gpus.iter() {
         let gpu = gpu.split(':').collect::<Vec<&str>>();
@@ -265,7 +288,6 @@ pub fn gpu_get_info(gpus: &[String], quiet: bool) -> u64 {
             _ => panic!("Unexpected error. Can't obtain GPU memory size."),
         };
 
-        // get work_group_size for kernel
         let context_properties = ContextProperties::new().platform(platform);
         let context =
             core::create_context(Some(&context_properties), &[device], None, None).unwrap();
@@ -282,7 +304,6 @@ pub fn gpu_get_info(gpus: &[String], quiet: bool) -> u64 {
         let kernel = core::create_kernel(&program, "calculate_nonces").unwrap();
         let kernel_workgroup_size = get_kernel_work_group_size(&kernel, device);
 
-        // --- INSERT THIS NEW BLOCK HERE ---
         let max_alloc_size = match core::get_device_info(&device, DeviceInfo::MaxMemAllocSize).unwrap() {
             core::DeviceInfoResult::MaxMemAllocSize(size) => size,
             _ => panic!("Unexpected error. Can't obtain max mem alloc size."),
@@ -297,7 +318,6 @@ pub fn gpu_get_info(gpus: &[String], quiet: bool) -> u64 {
             println!("Reduce GPU cores (current: {}) or try --zcb for zero-copy mode.", gpu_cores);
             process::exit(1);
         }
-        // --- END INSERT ---
 
         let gpu_cores = if gpu_cores == 0 {
             max_compute_units as usize
@@ -312,22 +332,18 @@ pub fn gpu_get_info(gpus: &[String], quiet: bool) -> u64 {
             process::exit(0);
         }
 
-        if !quiet {
-            println!(
+        println!(
                 "GPU: {} - {} [using {} of {} cores]",
                 to_string!(core::get_device_info(&device, DeviceInfo::Vendor)),
                 to_string!(core::get_device_info(&device, DeviceInfo::Name)),
                 gpu_cores,
                 max_compute_units
             );
-        }
-        if !quiet {
-            println!(
+       println!(
                 "     GPU-RAM: Total={:.2} MiB, Usage={:.2} MiB",
                 mem / 1024 / 1024,
                 mem_needed / 1024 / 1024,
             );
-        }
         total_mem_needed += mem_needed as u64;
     }
     total_mem_needed
@@ -362,14 +378,13 @@ pub fn gpu_init(gpus: &[String], mut zcb: bool) -> Vec<Arc<Mutex<GpuContext>>> {
                 _ => panic!("Unexpected error. Can't obtain number of GPU cores."),
             };
 
-        // Detect vendor and force zero-copy on Intel GPUs
         let vendor_str = to_string!(core::get_device_info(&device, DeviceInfo::Vendor));
         let vendor_lower = vendor_str.to_lowercase();
         let nvidia = vendor_lower.contains("nvidia");
         let intel = vendor_lower.contains("intel");
 
         if intel {
-            zcb = true; // Force zero-copy for Intel iGPUs — fixes CL_OUT_OF_RESOURCES
+            zcb = true;
         }
 
         let gpu_cores = if gpu_cores == 0 {
@@ -459,7 +474,6 @@ pub fn gpu_transfer_to_host(
 ) {
     let mut gpu_context = gpu_context.lock().unwrap();
 
-    // get mem mapping
     let map = if gpu_context.mapping {
         Some(mem_map_gpu_to_host(buffer_id, &gpu_context))
     } else {
@@ -467,12 +481,12 @@ pub fn gpu_transfer_to_host(
     };
 
     let buffer = if gpu_context.mapping {
-        // map to host (zero copy buffer)
+
         map.as_ref().unwrap().as_ptr()
     } else {
-        // get pointer
+
         let ptr = gpu_context.buffer_ptr_host.as_mut().unwrap().as_mut_ptr();
-        // copy to host
+
         let slice = unsafe { from_raw_parts_mut(ptr, gpu_context.worksize * NONCE_SIZE as usize) };
         mem_transfer_gpu_to_host(buffer_id, &gpu_context, slice);
         core::finish(&gpu_context.queue_b).unwrap();
@@ -500,12 +514,12 @@ pub fn gpu_hash_and_transfer_to_host(
     };
 
     let buffer = if gpu_context.mapping {
-        // map to host (zero copy buffer)
+
         map.as_ref().unwrap().as_ptr()
     } else {
-        // get pointer
+
         let ptr = gpu_context.buffer_ptr_host.as_mut().unwrap().as_mut_ptr();
-        // copy to host
+
         let slice = unsafe { from_raw_parts_mut(ptr, gpu_context.worksize * NONCE_SIZE as usize) };
         mem_transfer_gpu_to_host(buffer_id, &gpu_context, slice);
         ptr
@@ -603,7 +617,7 @@ fn mem_map_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext) -> core::MemMap<
 }
 
 fn mem_unmap_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext, map: Option<core::MemMap<u8>>) {
-    // map to host (zero copy buffer)
+
     if buffer_id == 1 {
         core::enqueue_unmap_mem_object(
             &gpu_context.queue_a,
@@ -626,7 +640,7 @@ fn mem_unmap_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext, map: Option<co
 }
 
 fn mem_transfer_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext, slice: &mut [u8]) {
-    const CHUNK_SIZE: usize = 256 * 1024 * 1024; // 256 MB per transfer chunk
+    const CHUNK_SIZE: usize = 256 * 1024 * 1024;
 
     let buffer = if buffer_id == 1 { &gpu_context.buffer_gpu_a } else { &gpu_context.buffer_gpu_b };
     let queue = &gpu_context.queue_b;
@@ -637,7 +651,7 @@ fn mem_transfer_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext, slice: &mut
             core::enqueue_read_buffer(
                 queue,
                 buffer,
-                false,  // non-blocking
+                false,
                 offset,
                 &mut slice[offset..offset + this_size],
                 None::<Event>,
@@ -646,16 +660,15 @@ fn mem_transfer_gpu_to_host(buffer_id: u8, gpu_context: &GpuContext, slice: &mut
             .unwrap();
         }
     }
-    core::finish(queue).unwrap(); // Ensure all chunks complete
+    core::finish(queue).unwrap();
 }
 
-// simd shabal words unpack + POC Shuffle + scatter nonces into optimised cache
 fn unpack_shuffle_scatter(buffer: *const u8, gpu_context: &GpuContext, transfer_task: &GpuTask) {
     unsafe {
         let buffer = from_raw_parts(buffer, gpu_context.worksize * NONCE_SIZE as usize);
         let iter: Vec<u64> = (0..transfer_task.local_nonces).step_by(16).collect();
         iter.par_iter().for_each(|n| {
-            // get global buffer
+
             let data = from_raw_parts_mut(
                 transfer_task.cache.ptr,
                 NONCE_SIZE as usize * transfer_task.cache_size as usize,

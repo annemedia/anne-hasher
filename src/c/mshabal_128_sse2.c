@@ -1,20 +1,4 @@
-/*
- * Parallel implementation of Shabal, using the SSE2 unit. This code
- * compiles and runs on x86 architectures, in 32-bit or 64-bit mode,
- * which possess a SSE2-compatible SIMD unit.
- *
- *
- * (c) 2010 SAPHIR project. This software is provided 'as-is', without
- * any epxress or implied warranty. In no event will the authors be held
- * liable for any damages arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to no restriction.
- *
- * Technical remarks and questions can be addressed to:
- * <thomas.pornin@cryptolog.com>
- */
+
 
 #include <emmintrin.h>
 #include <stddef.h>
@@ -364,7 +348,6 @@ void mshabal_close_sse2(mshabal128_context *sc, unsigned ub0, unsigned ub1, unsi
     }
 }
 
-// Shabal routine optimized for plotting and hashing
 void mshabal_hash_fast_sse2(mshabal128_context_fast *sc, void *message, void *termination,
                                    void *dst, unsigned num) {
     union input {
@@ -382,7 +365,6 @@ void mshabal_hash_fast_sse2(mshabal128_context_fast *sc, void *message, void *te
     }
     one = _mm_set1_epi32(C32(0xFFFFFFFF));
 
-    // round 1
 #define M(i) _mm_load_si128((__m128i *)message + i)
 
     while (num-- > 0) {
@@ -521,13 +503,11 @@ void mshabal_hash_fast_sse2(mshabal128_context_fast *sc, void *message, void *te
         SWAP_AND_SUB(B[0xE], C[0xE], M(0xE));
         SWAP_AND_SUB(B[0xF], C[0xF], M(0xF));
 
-        // move data pointer
         message = (__m128i *)message + 16;
 
         if (++sc->Wlow == 0) sc->Whigh++;
     }
 
-    // round 2-5
 #define M2(i) _mm_load_si128((__m128i *)termination + i)
 
     for (int k = 0; k < 4; k++) {
@@ -649,17 +629,14 @@ void mshabal_hash_fast_sse2(mshabal128_context_fast *sc, void *message, void *te
         if (sc->Wlow-- == 0) sc->Whigh--;
     }
 
-    // download SIMD aligned hashes
     for (j = 0; j < 8; j++) {
         _mm_storeu_si128((__m128i *)dst + j, C[j + 8]);
     }
 
-    // reset Wlow & Whigh
     sc->Wlow = 1;
     sc->Whigh = 0;
 }
 
-// Shabal routine optimized for mining
 void mshabal_deadline_fast_sse2(mshabal128_context_fast *sc, void *message, void *termination, void *dst0,
                                          void *dst1, void *dst2, void *dst3) {
     union input {
@@ -677,7 +654,6 @@ void mshabal_deadline_fast_sse2(mshabal128_context_fast *sc, void *message, void
     }
     one = _mm_set1_epi32(C32(0xFFFFFFFF));
 
-    // round 1
 #define M(i) _mm_load_si128((__m128i *)message + i)
 
     for (j = 0; j < 16; j++) B[j] = _mm_add_epi32(B[j], M(j));
@@ -816,7 +792,6 @@ void mshabal_deadline_fast_sse2(mshabal128_context_fast *sc, void *message, void
     SWAP_AND_SUB(B[0xF], C[0xF], M(0xF));
     if (++sc->Wlow == 0) sc->Whigh++;
 
-    // round 2-5
 #define M2(i) _mm_load_si128((__m128i *)termination + i)
 
     for (int k = 0; k < 4; k++) {
@@ -938,12 +913,10 @@ void mshabal_deadline_fast_sse2(mshabal128_context_fast *sc, void *message, void
         if (sc->Wlow-- == 0) sc->Whigh--;
     }
 
-    // download SIMD aligned deadlines
     u32 simd_dst[8];
     _mm_storeu_si128((__m128i *)&simd_dst[0], C[8]);
     _mm_storeu_si128((__m128i *)&simd_dst[4], C[9]);
 
-    // unpack SIMD data
     unsigned z;
     for (z = 0; z < 2; z++) {
         unsigned y = z * MSHABAL128_VECTOR_SIZE;
@@ -953,7 +926,6 @@ void mshabal_deadline_fast_sse2(mshabal128_context_fast *sc, void *message, void
         ((u32 *)dst3)[z] = simd_dst[y + 3];
     }
 
-    // reset Wlow & Whigh
     sc->Wlow = 1;
     sc->Whigh = 0;
 }

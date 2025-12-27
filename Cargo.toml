@@ -1,20 +1,24 @@
 [package]
-name = "anne-plotter"
+name = "anne-hasher"
 version = "2.0.0"
-license = "GPL-3.0"
-authors = ["annemedia, forked from Signum Network"]
+license = "MIT"
+authors = ["annemedia", "forked from Signum Network"]
 description = """
-anne-plotter - a PoC2 plotter written in Rust
+anne-hasher - a PoST hasher written in Rust
 """
-repository = "https://github.com/annemedia/anne-plotter"
-documentation = "https://github.com/annemedia/anne-plotter"
-keywords = ["anne", "plotter", "rust", "datacurrency"]
+repository = "https://github.com/annemedia/anne-hasher"
+documentation = "https://github.com/annemedia/anne-hasher"
+keywords = ["anne", "hasher", "rust", "datacurrency"]
 readme = "README.md"
 edition = "2024"
 
 [features]
 opencl = ["ocl-core"]
 simd=[]
+default = ["cli"]
+cli = []
+gui = ["dep:eframe", "dep:egui", "dep:rfd"]
+show_console = []
 
 [dependencies]
 crossbeam-channel = "0.5.15"
@@ -33,6 +37,11 @@ stopwatch = "0.0.7"
 fs2 = "0.4.3"
 page_size = "0.6.0"
 thread-priority = "3.0.0"
+egui = { version = "0.33.3", optional = true }
+eframe = { version = "0.33.3", optional = true }
+rfd = { version = "0.16.0", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["std","fileapi","securitybaseapi","errhandlingapi"] }
@@ -40,8 +49,9 @@ winapi = { version = "0.3", features = ["std","fileapi","securitybaseapi","errha
 
 [build-dependencies]
 cc = "1.0"
+winres = "0.1"
 
 [dev-dependencies]
 rust-crypto = "0.2.36"
 
-# .\anne-plotter.exe --n 1000 --id 968310216444800974 --path C:\Users\User\Documents\anneplots --sna 1 --gpu 0:0:3
+# .\anne-hasher.exe --n 1000 --id 968310216444800974 --path C:\Users\User\Documents\anneplots --sna 1 --gpu 0:0:3

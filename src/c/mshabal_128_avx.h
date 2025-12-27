@@ -162,7 +162,7 @@ void mshabal_deadline_fast_avx(mshabal128_context_fast *sc, void *message, void 
                                     void *dst1, void *dst2, void *dst3);
 
 /*
- * optimised Shabal routine for PoC plotting and hashing
+ * optimised Shabal routine for PoST hashing
  */
 void mshabal_hash_fast_avx(mshabal128_context_fast *sc, void *message, void *termination,
                                void *dst, unsigned num);

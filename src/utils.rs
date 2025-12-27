@@ -211,9 +211,9 @@ cfg_if::cfg_if! {
                         }
                     }
                 }
-                Err(e) => {
+                Err(_e) => {
 
-                    eprintln!("\nWarning: O_DIRECT open failed: {}. Using normal I/O.", e);
+                    eprintln!("\nWarning: DIRECT I/O is not available for your drive. Using normal I/O. Preallocation will be slow.");
                     preallocate_normal(file, size_in_bytes);
                 }
             }
@@ -373,4 +373,31 @@ cfg_if::cfg_if! {
             fs2::available_space(Path::new(&path)).unwrap()
         }
     }
+
 }
+
+pub fn calculate_rounded_nonces(nonces: u64, direct_io: bool, output_path: &str) -> u64 {
+    use crate::hasher::SCOOP_SIZE;
+    
+    if !direct_io {
+        return nonces;
+    }
+    
+    let sector_size = get_sector_size(output_path);
+    let nonces_per_sector = sector_size / SCOOP_SIZE;
+    
+    if nonces % nonces_per_sector == 0 {
+        nonces
+    } else {
+        let rounded = nonces / nonces_per_sector;
+        rounded * nonces_per_sector
+    }
+}
+
+// pub fn timestamp() -> String {
+//             use std::time::SystemTime;
+//             let now = SystemTime::now()
+//                 .duration_since(SystemTime::UNIX_EPOCH)
+//                 .unwrap_or_default();
+//             format!("[{}.{:03}]", now.as_secs(), now.subsec_millis())
+//         }
