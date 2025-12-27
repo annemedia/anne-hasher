@@ -17,3 +17,7 @@ Cargo.lock*
 Cargo copy.toml
 build copy.rs
 src/cpu_hasher copy.rs
+GIT-release-2.0/anne-hasher
+GIT-release-2.0.0/anne-hasher
+GIT-release-2.0/anne-hasher
+.gitignore
