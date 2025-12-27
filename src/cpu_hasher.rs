@@ -7,11 +7,13 @@ const NUM_SCOOPS: usize = 4096;
 const SCOOP_SIZE: usize = 64;
 const NONCE_SIZE: usize = NUM_SCOOPS * SCOOP_SIZE;
 
+#[cfg(target_arch = "x86_64")]
 unsafe extern "C" {
     pub fn init_shabal_sse2() -> ();
     pub fn init_shabal_avx() -> ();
     pub fn init_shabal_avx2() -> ();
     pub fn init_shabal_avx512f() -> ();
+
     pub fn noncegen_sse2(
         cache: *mut c_void,
         cache_size: size_t,
@@ -66,15 +68,19 @@ unsafe impl Sync for CpuTask {}
 
 #[derive(Debug, Clone)]
 pub enum SimdExtension {
+    #[cfg(target_arch = "x86_64")]
     AVX512f,
+    #[cfg(target_arch = "x86_64")]
     AVX2,
+    #[cfg(target_arch = "x86_64")]
     AVX,
+    #[cfg(target_arch = "x86_64")]
     SSE2,
     None,
 }
 
 pub fn init_simd() -> SimdExtension {
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(target_arch = "x86_64")]
     {
         if is_x86_feature_detected!("avx512f") {
             unsafe { init_shabal_avx512f(); }
@@ -104,12 +110,13 @@ pub fn hash_cpu(
     let numeric_id = hasher_task.numeric_id;
     let local_startnonce = hasher_task.local_startnonce;
     let local_nonces = hasher_task.local_nonces;
-    
+
     move || {
         let cache_ptr = cache_ptr_as_usize as *mut u8;
-        
+
         unsafe {
             match simd_ext {
+                #[cfg(target_arch = "x86_64")]
                 SimdExtension::AVX512f => noncegen_avx512f(
                     cache_ptr as *mut c_void,
                     cache_size,
@@ -118,6 +125,7 @@ pub fn hash_cpu(
                     local_startnonce,
                     local_nonces,
                 ),
+                #[cfg(target_arch = "x86_64")]
                 SimdExtension::AVX2 => noncegen_avx2(
                     cache_ptr as *mut c_void,
                     cache_size,
@@ -126,6 +134,7 @@ pub fn hash_cpu(
                     local_startnonce,
                     local_nonces,
                 ),
+                #[cfg(target_arch = "x86_64")]
                 SimdExtension::AVX => noncegen_avx(
                     cache_ptr as *mut c_void,
                     cache_size,
@@ -134,6 +143,7 @@ pub fn hash_cpu(
                     local_startnonce,
                     local_nonces,
                 ),
+                #[cfg(target_arch = "x86_64")]
                 SimdExtension::SSE2 => noncegen_sse2(
                     cache_ptr as *mut c_void,
                     cache_size,
@@ -142,11 +152,9 @@ pub fn hash_cpu(
                     local_startnonce,
                     local_nonces,
                 ),
+
                 _ => {
-                    let data = from_raw_parts_mut(
-                        cache_ptr,
-                        cache_size * NONCE_SIZE,
-                    );
+                    let data = from_raw_parts_mut(cache_ptr, cache_size * NONCE_SIZE);
                     noncegen_rust(
                         data,
                         chunk_offset,
@@ -158,7 +166,6 @@ pub fn hash_cpu(
             }
         }
 
-        // Gracefully handle channel send errors (scheduler may have exited)
         let _ = tx.send((0u8, 1u8, 0));
         let _ = tx.send((0u8, 0u8, local_nonces));
     }
@@ -184,6 +191,7 @@ mod test {
             assert_eq!(hasher.result_str(), exp_result_hash);
         };
 
+        #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx512f") {
             let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
@@ -200,6 +208,7 @@ mod test {
             check_result(&buf);
         }
 
+        #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") {
             let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
@@ -216,6 +225,7 @@ mod test {
             check_result(&buf);
         }
 
+        #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx") {
             let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
@@ -232,6 +242,7 @@ mod test {
             check_result(&buf);
         }
 
+        #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("sse2") {
             let mut buf = vec![0; 32 * hasher::NONCE_SIZE as usize];
             unsafe {
