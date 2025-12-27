@@ -2,6 +2,7 @@
 use humanize_rs::bytes::Bytes;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+#[cfg(target_arch = "x86_64")]
 use raw_cpuid::CpuId;
 
 use crate::cpu_hasher::{SimdExtension, init_simd};
@@ -78,20 +79,23 @@ impl Hasher {
         //             .map(|v| v.as_str().to_string())
         //             .unwrap_or_else(|| "Unknown CPU".to_string())
         //     });
-        let cpu_name: String = if cfg!(target_arch = "x86_64") {
-            let cpuid = CpuId::new();
-            cpuid
-                .get_processor_brand_string()
-                .and_then(|pbs| Some(pbs.as_str().trim().to_string()))
-                .or_else(|| {
-                    cpuid
-                        .get_vendor_info()
-                        .map(|vi| vi.as_str().to_string())
-                })
-                .unwrap_or_else(|| "Unknown CPU".to_string())
-        } else {
-            // On aarch64 (Apple Silicon), just report the architecture
-            "Apple Silicon (aarch64)".to_string()
+        let cpu_name: String = {
+            #[cfg(target_arch = "x86_64")]
+            {
+                let cpuid = CpuId::new();
+                if let Some(pbs) = cpuid.get_processor_brand_string() {
+                    pbs.as_str().trim().to_string()
+                } else if let Some(vi) = cpuid.get_vendor_info() {
+                    vi.as_str().to_string()
+                } else {
+                    "Unknown CPU".to_string()
+                }
+            }
+
+            #[cfg(not(target_arch = "x86_64"))]
+            {
+                "Apple Silicon (aarch64)".to_string()
+            }
         };
 
         let cores = sys_info::cpu_num().unwrap();
