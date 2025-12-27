@@ -68,16 +68,31 @@ impl Hasher {
     }
 
     pub fn run(&self, mut task: HasherTask) {
-        let cpuid = CpuId::new();
-        let cpu_name = cpuid
-            .get_processor_brand_string()
-            .map(|s| s.as_str().trim().to_string())
-            .unwrap_or_else(|| {
-                cpuid
-                    .get_vendor_info()
-                    .map(|v| v.as_str().to_string())
-                    .unwrap_or_else(|| "Unknown CPU".to_string())
-            });
+        // let cpuid = CpuId::new();
+        // let cpu_name = cpuid
+        //     .get_processor_brand_string()
+        //     .map(|s| s.as_str().trim().to_string())
+        //     .unwrap_or_else(|| {
+        //         cpuid
+        //             .get_vendor_info()
+        //             .map(|v| v.as_str().to_string())
+        //             .unwrap_or_else(|| "Unknown CPU".to_string())
+        //     });
+        let cpu_name: String = if cfg!(target_arch = "x86_64") {
+            let cpuid = CpuId::new();
+            cpuid
+                .get_processor_brand_string()
+                .and_then(|pbs| Some(pbs.as_str().trim().to_string()))
+                .or_else(|| {
+                    cpuid
+                        .get_vendor_info()
+                        .map(|vi| vi.as_str().to_string())
+                })
+                .unwrap_or_else(|| "Unknown CPU".to_string())
+        } else {
+            // On aarch64 (Apple Silicon), just report the architecture
+            "Apple Silicon (aarch64)".to_string()
+        };
 
         let cores = sys_info::cpu_num().unwrap();
         let memory = sys_info::mem_info().unwrap();
