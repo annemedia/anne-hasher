@@ -1,4 +1,4 @@
-name: Build macOS Universal Binary (Minimal)
+name: Build macOS Universal Binary
 
 on:
   workflow_dispatch:  # Manual trigger only
@@ -16,11 +16,17 @@ jobs:
         with:
           targets: x86_64-apple-darwin,aarch64-apple-darwin
 
-      - name: Build x86_64
-        run: cargo build --release --target x86_64-apple-darwin
+      - name: Build x86_64 (with GUI + OpenCL, no -mtune=native)
+        env:
+          NO_MTUNE_NATIVE: "1"  # Tells build.rs to skip -mtune=native
+        run: >
+          cargo build --release --target x86_64-apple-darwin
+          --features "gui opencl"
 
-      - name: Build aarch64
-        run: cargo build --release --target aarch64-apple-darwin
+      - name: Build aarch64 (with GUI + OpenCL)
+        run: >
+          cargo build --release --target aarch64-apple-darwin
+          --features "gui opencl"
 
       - name: Create universal binary
         run: |
