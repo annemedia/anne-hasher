@@ -24,3 +24,5 @@ GIT-release-2.0/anne-hasher
 GIT-release-2.0.0/anne-hasher-linux.zip
 GIT-release-2.0.0/anne-hasher-macos-universal.zip
 GIT-release-2.0.0/anne-hasher-windows.zip
+anne-hasher-macos.zip
+.gitignore
