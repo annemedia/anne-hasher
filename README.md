@@ -15,6 +15,19 @@ https://github.com/annemedia/anne-hasher/releases
 
 To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Command Prompt/PowerShell:
 
+### GUI usage
+
+##### Linux
+Make sure the application has executable permissions and open it from your file explorer.
+
+##### macOS
+Open the dmg and drag it to your Applications folder, run it from there.
+
+##### Windows
+Run the exe.
+
+### CLI usage
+
 ##### Linux/macOS terminal
 ```shell
 ./anne-hasher --help
@@ -30,18 +43,22 @@ To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Comma
 --id - your Neuron ID (NID) aka ANNE ID
 --path - where do you want your nonces
 --sna - count of auto-hashing of sequential files, each with --n nonces, starting after the last existing nonce found in the --path (for example --n 381500 with --sna 10 combination will create ~1TB (10x100GB) worth of nonces)
+--sn - starting nonce - do not use together with --sna. Allows you to manual specify the nonce from which the hashing will start. Eg you may already have 1M nonces in folder A, and want another 1M in folder B, then your starting nonce will be 1000000.
 --cpu - how many CPU cores (note too high allocation may impact OS stability)
---gpu - how many GPU cores (note too high allocation may impact OS stability)
+--gpu - platform (usually 0) : device (usually 0) : how many GPU cores (note too high allocation may impact OS stability), eg. 0:0:5 (platform:device:gpu cores)
 ```
-### Example CLI usage
 
-##### Linux/macOS terminal
+##### Linux terminal
 ```shell
-./anne-hasher --n 381500 --id 1234567890123456789 --path /home/user/annehashes --sna 10 --cpu 4 --gpu 5
+./anne-hasher --n 381500 --id 1234567890123456789 --path /home/user/annehashes --sna 10 --cpu 4 --gpu 0:0:5
+```
+##### macOS terminal
+```shell
+./anne-hasher-cli --n 381500 --id 1234567890123456789 --path /home/user/annehashes --sna 10 --cpu 4 --gpu 0:0:5
 ```
 ##### Windows Command Prompt/PowerShell
 ```shell
-.\anne-hasher --n 381500 --id 1234567890123456789 --path C:\Users\User\Documents\annehashes --sna 10 --cpu 4 --gpu 5
+.\anne-hasher-cli.exe --n 381500 --id 1234567890123456789 --path C:\Users\User\Documents\annehashes --sna 10 --cpu 4 --gpu 0:0:5
 ```
 
 ## Build from Sources
@@ -51,10 +68,10 @@ To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Comma
 
 ``` shell
 # build release with GPU support, and GUI:
-cargo build --release [--features=opencl,gui]
+cargo build --release --features=opencl,gui
 
 # build debug
-cargo build [--features=opencl,gui]
+cargo build --features=opencl,gui
 ```
 
 ## Forked from
