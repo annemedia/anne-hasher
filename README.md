@@ -1,9 +1,9 @@
 # ANNE Hasher - Proof of Spacetime Hasher
-ANNE Hasher is a GUI and command line Proof of Spacetime pre-mining/hashing tool compatible with ANNE, download the release executable for your system. 
+ANNE Hasher is a GUI and command line Proof of Spacetime pre-mining/hashing tool compatible with ANNE, download the release executables for your system. 
 
 ## Features
 - windows, linux, macOS
-- direct and async I/O fallback
+- direct I/O and async I/O fallback
 - SIMD support: sse2, avx, avx2, avx512f
 - GPU support
 
