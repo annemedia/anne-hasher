@@ -21,7 +21,7 @@ To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Comma
 Make sure the application has executable permissions and open it from your file explorer.
 
 ##### macOS
-Open the dmg and drag it to your Applications folder, run it from there.
+Open the dmg and drag the application to your Applications folder, run it from there.
 
 ##### Windows
 Run the exe.
