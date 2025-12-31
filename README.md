@@ -28,13 +28,17 @@ Run the exe.
 
 ### CLI usage
 
-##### Linux/macOS terminal
+##### Linux terminal
 ```shell
 ./anne-hasher --help
 ```
+##### macOS terminal
+```shell
+./anne-hasher-cli --help
+```
 ##### Windows Command Prompt/PowerShell
 ```shell
-.\anne-hasher --help
+.\anne-hasher-cli.exe --help
 ```
 
 ##### Recommended options
