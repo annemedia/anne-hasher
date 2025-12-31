@@ -27,6 +27,8 @@ jobs:
           lipo -create -output anne-hasher-cli \
             target/x86_64-apple-darwin/release/anne-hasher \
             target/aarch64-apple-darwin/release/anne-hasher
+          
+          chmod +x anne-hasher-cli
 
       # Build GUI version (for .app bundle)
       - name: Build GUI universal binary
@@ -62,26 +64,15 @@ jobs:
     <string>com.annemedia.anne-hasher</string>
     <key>CFBundleName</key>
     <string>Anne Hasher</string>
-    <key>CFBundleDisplayName</key>
-    <string>Anne Hasher</string>
-    <key>CFBundleVersion</key>
-    <string>2.0.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>2.0.0</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon.icns</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <!-- NO LSUIElement - shows dock icon -->
 </dict>
 </plist>
 EOF
           
-          # Create icon
+          # Create icon if icon.png exists
           if [ -f "icon.png" ]; then
             mkdir -p temp_icon.iconset
             sips -z 16 16 icon.png --out temp_icon.iconset/icon_16x16.png
@@ -97,7 +88,7 @@ EOF
             rm -rf temp_icon.iconset
           fi
 
-      - name: Create DMG with Applications link
+      - name: Create DMG
         run: |
           mkdir -p dmg_contents
           cp -R "Anne Hasher.app" dmg_contents/
@@ -107,32 +98,12 @@ EOF
             -srcfolder dmg_contents \
             -ov -format UDZO \
             -imagekey zlib-level=9 \
-            anne-hasher-macos.dmg
+            anne-hasher-gui.dmg
 
-      - name: Package CLI binary
-        run: |
-          # Make CLI binary executable
-          chmod +x anne-hasher-cli
-          
-          # Create a simple tar for CLI
-          tar -czf anne-hasher-cli-macos.tar.gz anne-hasher-cli
-          
-          # Create install script for CLI
-          cat > install-cli.sh << 'EOF'
-#!/bin/bash
-echo "Installing anne-hasher CLI to /usr/local/bin..."
-sudo cp anne-hasher-cli /usr/local/bin/anne-hasher
-sudo chmod +x /usr/local/bin/anne-hasher
-echo "Installation complete. Run: anne-hasher --help"
-EOF
-          chmod +x install-cli.sh
-
-      - name: Upload all artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: anne-hasher-macos
           path: |
-            anne-hasher-macos.dmg
             anne-hasher-cli
-            anne-hasher-cli-macos.tar.gz
-            install-cli.sh
+            anne-hasher-gui.dmg
