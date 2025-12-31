@@ -45,37 +45,54 @@ cfg_if::cfg_if! {
         
 
         fn get_device_id_unix(path: &str) -> String {
-
-            let path_obj = Path::new(path);
-            let parent = path_obj.parent()
-                .unwrap_or_else(|| Path::new("/"));
-            
-            if !parent.exists() {
-                panic!("Parent directory does not exist: {:?}. Please create it first.", parent);
+    let path_obj = Path::new(path);
+    let parent = path_obj.parent()
+        .unwrap_or_else(|| Path::new("/"));
+    
+    if !parent.exists() {
+        panic!("Parent directory does not exist: {:?}. Please create it first.", parent);
+    }
+    
+    let actual_path = parent.to_str().unwrap();
+    
+    // Try using stat command which is more portable
+    let output = Command::new("stat")
+        .arg("-f")
+        .arg("%Sd")
+        .arg(actual_path)
+        .output();
+    
+    if let Ok(output) = output {
+        if output.status.success() {
+            let device = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !device.is_empty() && device != "0" {
+                return device;
             }
-            
-
-            let actual_path = parent.to_str().unwrap();
-            
-
-            let output = Command::new("df")
-                .arg("--output=source")
-                .arg(actual_path)
-                .output()
-                .expect("failed to execute 'df --output=source'");
-            
-            let source = String::from_utf8(output.stdout).expect("not utf8");
-            let lines: Vec<&str> = source.trim().split('\n').collect();
-            
-            if lines.len() >= 2 {
-                let device = lines[1].trim();
-                if !device.is_empty() {
-                    return device.to_string();
-                }
-            }
-            
-            panic!("Could not determine device for path: {} (parent: {})", path, actual_path);
         }
+    }
+    
+    // Fallback to df
+    let output = Command::new("df")
+        .arg(actual_path)
+        .output()
+        .expect("failed to execute 'df'");
+    
+    let source = String::from_utf8(output.stdout).expect("not utf8");
+    let lines: Vec<&str> = source.trim().split('\n').collect();
+    
+    if lines.len() >= 2 {
+        // Parse df output - device is first field
+        let parts: Vec<&str> = lines[1].split_whitespace().collect();
+        if !parts.is_empty() {
+            let device = parts[0].trim();
+            if !device.is_empty() {
+                return device.to_string();
+            }
+        }
+    }
+    
+    panic!("Could not determine device for path: {} (parent: {})", path, actual_path);
+}
 
         fn get_sector_size_macos(path: &str) -> u64 {
             let source = get_device_id_unix(path);
