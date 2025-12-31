@@ -48,6 +48,8 @@ Run the exe.
 --gpu - platform (usually 0) : device (usually 0) : how many GPU cores (note too high allocation may impact OS stability), eg. 0:0:5 (platform:device:gpu cores)
 ```
 
+Example CLI usage
+
 ##### Linux terminal
 ```shell
 ./anne-hasher --n 381500 --id 1234567890123456789 --path /home/user/annehashes --sna 10 --cpu 4 --gpu 0:0:5
