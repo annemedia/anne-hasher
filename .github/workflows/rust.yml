@@ -36,25 +36,23 @@ jobs:
           cp anne-hasher-gui "Anne Hasher.app/Contents/MacOS/anne-hasher"
           chmod +x "Anne Hasher.app/Contents/MacOS/anne-hasher"
           
-          # Create Info.plist
-          cat > "Anne Hasher.app/Contents/Info.plist" << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>anne-hasher</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.annemedia.anne-hasher</string>
-    <key>CFBundleName</key>
-    <string>Anne Hasher</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon.icns</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-</dict>
-</plist>
-EOF
+          # Create Info.plist - NO LSUIElement means dock icon shows
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > "Anne Hasher.app/Contents/Info.plist"
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '<plist version="1.0">' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '<dict>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <key>CFBundleExecutable</key>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <string>anne-hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <key>CFBundleIdentifier</key>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <string>com.annemedia.anne-hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <key>CFBundleName</key>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <string>Anne Hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <key>CFBundleIconFile</key>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <string>AppIcon.icns</string>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <key>NSHighResolutionCapable</key>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '    <true/>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '</dict>' >> "Anne Hasher.app/Contents/Info.plist"
+          echo '</plist>' >> "Anne Hasher.app/Contents/Info.plist"
           
           # Create icon if exists
           if [ -f "icon.png" ]; then
