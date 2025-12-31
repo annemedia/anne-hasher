@@ -16,43 +16,27 @@ jobs:
         with:
           targets: x86_64-apple-darwin,aarch64-apple-darwin
 
-      # Build CLI version (for terminal)
       - name: Build CLI universal binary
         run: |
-          # Build both architectures
           NO_MTUNE_NATIVE=1 cargo build --release --target x86_64-apple-darwin --features "cli opencl"
           cargo build --release --target aarch64-apple-darwin --features "cli opencl"
-          
-          # Create universal binary
-          lipo -create -output anne-hasher-cli \
-            target/x86_64-apple-darwin/release/anne-hasher \
-            target/aarch64-apple-darwin/release/anne-hasher
-          
+          lipo -create -output anne-hasher-cli target/x86_64-apple-darwin/release/anne-hasher target/aarch64-apple-darwin/release/anne-hasher
           chmod +x anne-hasher-cli
 
-      # Build GUI version (for .app bundle)
       - name: Build GUI universal binary
         run: |
-          # Build both architectures
           NO_MTUNE_NATIVE=1 cargo build --release --target x86_64-apple-darwin --features "gui opencl"
           cargo build --release --target aarch64-apple-darwin --features "gui opencl"
-          
-          # Create universal binary
-          lipo -create -output anne-hasher-gui \
-            target/x86_64-apple-darwin/release/anne-hasher \
-            target/aarch64-apple-darwin/release/anne-hasher
+          lipo -create -output anne-hasher-gui target/x86_64-apple-darwin/release/anne-hasher target/aarch64-apple-darwin/release/anne-hasher
 
-      - name: Create GUI .app bundle (with dock icon)
+      - name: Create GUI .app bundle
         run: |
-          # Create .app structure
           mkdir -p "Anne Hasher.app/Contents/MacOS"
           mkdir -p "Anne Hasher.app/Contents/Resources"
-          
-          # Copy GUI binary and make executable
           cp anne-hasher-gui "Anne Hasher.app/Contents/MacOS/anne-hasher"
           chmod +x "Anne Hasher.app/Contents/MacOS/anne-hasher"
           
-          # Create Info.plist WITHOUT LSUIElement (shows dock icon)
+          # Create Info.plist
           cat > "Anne Hasher.app/Contents/Info.plist" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -72,7 +56,7 @@ jobs:
 </plist>
 EOF
           
-          # Create icon if icon.png exists
+          # Create icon if exists
           if [ -f "icon.png" ]; then
             mkdir -p temp_icon.iconset
             sips -z 16 16 icon.png --out temp_icon.iconset/icon_16x16.png
@@ -93,12 +77,7 @@ EOF
           mkdir -p dmg_contents
           cp -R "Anne Hasher.app" dmg_contents/
           ln -s /Applications dmg_contents/Applications
-          
-          hdiutil create -volname "Anne Hasher" \
-            -srcfolder dmg_contents \
-            -ov -format UDZO \
-            -imagekey zlib-level=9 \
-            anne-hasher-gui.dmg
+          hdiutil create -volname "Anne Hasher" -srcfolder dmg_contents -ov -format UDZO -imagekey zlib-level=9 anne-hasher-gui.dmg
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
