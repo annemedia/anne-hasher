@@ -1,4 +1,4 @@
-name: Build macOS Universal Binary
+name: Build macOS Universal Binaries
 
 on:
   workflow_dispatch:
@@ -16,46 +16,73 @@ jobs:
         with:
           targets: x86_64-apple-darwin,aarch64-apple-darwin
 
-      - name: Build universal binary
+      # Build CLI version (for terminal)
+      - name: Build CLI universal binary
+        run: |
+          # Build both architectures
+          NO_MTUNE_NATIVE=1 cargo build --release --target x86_64-apple-darwin --features "cli opencl"
+          cargo build --release --target aarch64-apple-darwin --features "cli opencl"
+          
+          # Create universal binary
+          lipo -create -output anne-hasher-cli \
+            target/x86_64-apple-darwin/release/anne-hasher \
+            target/aarch64-apple-darwin/release/anne-hasher
+
+      # Build GUI version (for .app bundle)
+      - name: Build GUI universal binary
         run: |
           # Build both architectures
           NO_MTUNE_NATIVE=1 cargo build --release --target x86_64-apple-darwin --features "gui opencl"
           cargo build --release --target aarch64-apple-darwin --features "gui opencl"
           
           # Create universal binary
-          lipo -create -output anne-hasher \
+          lipo -create -output anne-hasher-gui \
             target/x86_64-apple-darwin/release/anne-hasher \
             target/aarch64-apple-darwin/release/anne-hasher
 
-      - name: Create app bundle with icon
+      - name: Create GUI .app bundle (with dock icon)
         run: |
           # Create .app structure
           mkdir -p "Anne Hasher.app/Contents/MacOS"
           mkdir -p "Anne Hasher.app/Contents/Resources"
-          cp anne-hasher "Anne Hasher.app/Contents/MacOS/"
           
-          # Create Info.plist with icon reference
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > "Anne Hasher.app/Contents/Info.plist"
-          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '<plist version="1.0">' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '<dict>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <key>CFBundleExecutable</key>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <string>anne-hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <key>CFBundleIdentifier</key>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <string>com.annemedia.anne-hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <key>CFBundleName</key>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <string>Anne Hasher</string>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <key>CFBundleIconFile</key>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <string>AppIcon.icns</string>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <key>LSUIElement</key>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '    <true/>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '</dict>' >> "Anne Hasher.app/Contents/Info.plist"
-          echo '</plist>' >> "Anne Hasher.app/Contents/Info.plist"
+          # Copy GUI binary and make executable
+          cp anne-hasher-gui "Anne Hasher.app/Contents/MacOS/anne-hasher"
+          chmod +x "Anne Hasher.app/Contents/MacOS/anne-hasher"
           
-          # Create a simple icon if you don't have one
-          # Option 1: Create a basic icon from a PNG (if you have icon.png in repo)
+          # Create Info.plist WITHOUT LSUIElement (shows dock icon)
+          cat > "Anne Hasher.app/Contents/Info.plist" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>anne-hasher</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.annemedia.anne-hasher</string>
+    <key>CFBundleName</key>
+    <string>Anne Hasher</string>
+    <key>CFBundleDisplayName</key>
+    <string>Anne Hasher</string>
+    <key>CFBundleVersion</key>
+    <string>2.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>2.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon.icns</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.15</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <!-- NO LSUIElement - shows dock icon -->
+</dict>
+</plist>
+EOF
+          
+          # Create icon
           if [ -f "icon.png" ]; then
-            # Create .icns from PNG
             mkdir -p temp_icon.iconset
             sips -z 16 16 icon.png --out temp_icon.iconset/icon_16x16.png
             sips -z 32 32 icon.png --out temp_icon.iconset/icon_16x16@2x.png
@@ -68,60 +95,44 @@ jobs:
             sips -z 512 512 icon.png --out temp_icon.iconset/icon_512x512.png
             iconutil -c icns temp_icon.iconset -o "Anne Hasher.app/Contents/Resources/AppIcon.icns"
             rm -rf temp_icon.iconset
-          else
-            # Option 2: Create a placeholder icon
-            echo "Creating placeholder icon..."
-            # Create a simple PNG with ImageMagick if available
-            if command -v convert &> /dev/null; then
-              convert -size 512x512 xc:blue -pointsize 100 -fill white -gravity center -draw "text 0,0 'AH'" icon.png
-              mkdir -p temp_icon.iconset
-              sips -z 16 16 icon.png --out temp_icon.iconset/icon_16x16.png
-              sips -z 32 32 icon.png --out temp_icon.iconset/icon_16x16@2x.png
-              sips -z 32 32 icon.png --out temp_icon.iconset/icon_32x32.png
-              sips -z 64 64 icon.png --out temp_icon.iconset/icon_32x32@2x.png
-              sips -z 128 128 icon.png --out temp_icon.iconset/icon_128x128.png
-              sips -z 256 256 icon.png --out temp_icon.iconset/icon_128x128@2x.png
-              sips -z 256 256 icon.png --out temp_icon.iconset/icon_256x256.png
-              sips -z 512 512 icon.png --out temp_icon.iconset/icon_256x256@2x.png
-              sips -z 512 512 icon.png --out temp_icon.iconset/icon_512x512.png
-              iconutil -c icns temp_icon.iconset -o "Anne Hasher.app/Contents/Resources/AppIcon.icns"
-              rm -rf temp_icon.iconset
-              rm icon.png
-            else
-              # Just create an empty file as placeholder
-              echo "No icon" > "Anne Hasher.app/Contents/Resources/AppIcon.icns"
-            fi
           fi
 
-      - name: Create professional DMG
+      - name: Create DMG with Applications link
         run: |
-          # Create a temporary DMG with Applications link
           mkdir -p dmg_contents
           cp -R "Anne Hasher.app" dmg_contents/
-          
-          # Create Applications folder alias
           ln -s /Applications dmg_contents/Applications
           
-          # Create background image (optional)
-          if command -v convert &> /dev/null; then
-            convert -size 600x400 xc:white -pointsize 36 -fill black -gravity center -draw "text 0,0 'Drag to Applications'" dmg_background.png
-            mkdir -p dmg_contents/.background
-            cp dmg_background.png dmg_contents/.background/
-          fi
-          
-          # Create DMG
           hdiutil create -volname "Anne Hasher" \
             -srcfolder dmg_contents \
             -ov -format UDZO \
             -imagekey zlib-level=9 \
-            -fs HFS+ \
             anne-hasher-macos.dmg
-          
-          # Clean up
-          rm -rf dmg_contents dmg_background.png
 
-      - name: Upload DMG
+      - name: Package CLI binary
+        run: |
+          # Make CLI binary executable
+          chmod +x anne-hasher-cli
+          
+          # Create a simple tar for CLI
+          tar -czf anne-hasher-cli-macos.tar.gz anne-hasher-cli
+          
+          # Create install script for CLI
+          cat > install-cli.sh << 'EOF'
+#!/bin/bash
+echo "Installing anne-hasher CLI to /usr/local/bin..."
+sudo cp anne-hasher-cli /usr/local/bin/anne-hasher
+sudo chmod +x /usr/local/bin/anne-hasher
+echo "Installation complete. Run: anne-hasher --help"
+EOF
+          chmod +x install-cli.sh
+
+      - name: Upload all artifacts
         uses: actions/upload-artifact@v4
         with:
           name: anne-hasher-macos
-          path: anne-hasher-macos.dmg
+          path: |
+            anne-hasher-macos.dmg
+            anne-hasher-cli
+            anne-hasher-cli-macos.tar.gz
+            install-cli.sh
