@@ -60,7 +60,7 @@ Example CLI usage
 ```
 ##### macOS terminal
 ```shell
-./anne-hasher-cli --n 381500 --id 1234567890123456789 --path /home/user/annehashes --sna 10 --cpu 4 --gpu 0:0:5
+./anne-hasher-cli --n 381500 --id 1234567890123456789 --path /Users/user/annehashes --sna 10 --cpu 4 --gpu 0:0:5
 ```
 ##### Windows Command Prompt/PowerShell
 ```shell
