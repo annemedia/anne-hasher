@@ -1,5 +1,5 @@
 # ANNE Hasher - Proof of Spacetime Hasher
-ANNE Hasher is a GUI and command line Proof of Spacetime pre-mining/hashing tool compatible with ANNE, download the release executables for your system. 
+ANNE Hasher is a GUI and command line Proof of Spacetime pre-mining/hashing tool compatible with ANNE, download the release executables for your system.
 
 ## Features
 - windows, linux, macOS
@@ -17,14 +17,39 @@ To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Comma
 
 ### GUI usage
 
+Note: this app is unsigned. This means Windows and macOS will harass you with an unidentified developer warning; rest assured, the app is clean.
+
 ##### Linux
-Make sure the application has executable permissions and open it from your file explorer.
+Make sure the app has executable permissions and open it from your file explorer.
 
 ##### macOS
-Open the dmg and drag the application to your Applications folder, run it from there.
+Open the dmg and drag the app to your Applications folder, run it from there. If you get an unidentified developer warning, either change the settings under System Preferences > Security & Privacy > General > Allow applications downloaded from: to Anywhere or in a Terminal, strip the xattr com.apple.quarantine attribute from the downloaded file, like so:
+
+```shell
+cd /Applications
+xattr -dr com.apple.quarantine "Anne Hasher.app"
+```
+
+Alternatively, you can bypass the quarantine by downloading the app via Terminal, like so:
+
+```shell
+curl -L -o  anne-hasher-macos.zip https://github.com/annemedia/anne-hasher/releases/download/anne-hasher-v2.0/anne-hasher-macos.zip
+```
 
 ##### Windows
-Run the exe.
+Run the exe, and if you get a warning "Windows Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.", click on More info and Run anyway.
+
+Alternatively, you can avert the dumb-screen by downloading the app via PowerShell, like so:
+
+```shell
+curl -o  anne-hasher-windows.zip https://github.com/annemedia/anne-hasher/releases/download/anne-hasher-v2.0/anne-hasher-windows.zip
+```
+
+or Command Prompt:
+
+```shell
+curl -L -o  anne-hasher-windows.zip https://github.com/annemedia/anne-hasher/releases/download/anne-hasher-v2.0/anne-hasher-windows.zip
+```
 
 ### CLI usage
 
