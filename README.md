@@ -23,7 +23,7 @@ Note: this app is unsigned. This means Windows and macOS will harass you with an
 Make sure the app has executable permissions and open it from your file explorer.
 
 ##### macOS
-Open the dmg and drag the app to your Applications folder, run it from there. If you get an unidentified developer warning, either change the settings under System Preferences > Security & Privacy > General > Allow applications downloaded from: to Anywhere or in a Terminal, strip the xattr com.apple.quarantine attribute from the downloaded file, like so:
+Open the dmg and drag the app to your Applications folder, run it from there. If you get an unidentified developer warning, either change the settings under System Preferences > Security & Privacy > General > Allow applications downloaded from: to Anywhere or in a Terminal, OR strip the xattr com.apple.quarantine attribute from the downloaded file, like so:
 
 ```shell
 cd /Applications
