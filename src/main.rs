@@ -182,7 +182,7 @@ struct AnneGuiApp {
     #[cfg(feature = "opencl")]
     gpu_rx: Option<Receiver<Vec<GpuInfo>>>,
     #[cfg(feature = "opencl")]
-    gpu_thread_spawned: bool,   // ← Add this line
+    gpu_thread_spawned: bool,
     visuals_applied: bool,
     disable_direct_io: bool,
     low_priority: bool,
@@ -208,7 +208,6 @@ impl Default for AnneGuiApp {
         let default_nonces = 381500u64;
         let cores = sys_info::cpu_num().unwrap_or(1) / 2;
 
-        // Define all GPU-related fields (even if not using OpenCL)
         #[cfg(feature = "opencl")]
         let (gpu_cores, total_gpu_cores, detected_gpus, selected_gpu, gpu_detection_done, gpu_rx, gpu_thread_spawned) = (
             "0".to_string(),
@@ -224,10 +223,10 @@ impl Default for AnneGuiApp {
         let (gpu_cores, total_gpu_cores, detected_gpus, selected_gpu, gpu_detection_done, gpu_rx, gpu_thread_spawned) = (
             "0".to_string(),
             0u32,
-            Vec::new(),
+            Vec::<String>::new(),
             0usize,
             false,
-            None,
+            None::<Receiver<ProgressUpdate>>,
             false,
         );
 
@@ -586,11 +585,16 @@ impl Default for AnneGuiApp {
                                     
                                     ui.label(RichText::new(total_label).color(TEXT_LIGHT));
                                     ui.add(
-                                        eframe::egui::TextEdit::singleline(&mut self.gpu_cores)
-                                            .desired_width((available_width / 2.0) - 20.0)
-                                            .frame(true)
-                                            .background_color(INPUT_BG)
-                                            .text_color(INPUT_TEXT)
+                                        eframe::egui::TextEdit::singleline(
+                                        #[cfg(feature = "opencl")]
+                                        &mut self.gpu_cores,
+                                        #[cfg(not(feature = "opencl"))]
+                                        &mut "0".to_string()
+                                    )
+                                    .desired_width((available_width / 2.0) - 20.0)
+                                    .frame(true)
+                                    .background_color(INPUT_BG)
+                                    .text_color(INPUT_TEXT)
                                     );
                                 });
                             });
@@ -1055,7 +1059,12 @@ impl Default for AnneGuiApp {
                 return;
             }
 
-            let gpu_cores_count: u32 = match self.gpu_cores.trim().parse() {
+            let gpu_cores_count: u32 = match {
+                #[cfg(feature = "opencl")]
+                { &self.gpu_cores }
+                #[cfg(not(feature = "opencl"))]
+                { "0" }
+            }.trim().parse() {
                 Ok(mut v) => {
                     #[cfg(feature = "opencl")]
                     {

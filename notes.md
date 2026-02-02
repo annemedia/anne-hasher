@@ -1,0 +1,1 @@
+cargo build --release --features=opencl,gui --target x86_64-pc-windows-msvc (static build for windows)
