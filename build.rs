@@ -22,11 +22,8 @@ fn main() {
             eprintln!("Error compiling Windows resource: {}", e);
             std::process::exit(1);
         }
-
-        // ADD the icon (adjust path if needed)
         res.set_icon("assets/annehasher.ico");
 
-        // Optional: Set version info
         res.set_version_info(winres::VersionInfo::PRODUCTVERSION, 0x0002000000000000);
 
         if let Err(e) = res.compile() {
@@ -49,13 +46,12 @@ fn main() {
     config.file("src/c/sph_shabal.c").file("src/c/common.c").compile("shabal");
 
     if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
-        // Base shabal (no SIMD)
+
         base.clone().file("src/c/sph_shabal.c").file("src/c/common.c").compile("shabal");
 
         println!("cargo:rustc-link-search=native={}", std::env::var("OUT_DIR").unwrap());
         println!("cargo:rustc-link-lib=static=shabal");
 
-        // SSE2
         let mut config = base.clone();
         if std::env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
             config.flag("/arch:SSE2");
@@ -68,7 +64,6 @@ fn main() {
             .compile("shabal_sse2");
         println!("cargo:rustc-link-lib=static=shabal_sse2");
 
-        // AVX
         let mut config = base.clone();
         if std::env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
             config.flag("/arch:AVX");
@@ -81,7 +76,6 @@ fn main() {
             .compile("shabal_avx");
         println!("cargo:rustc-link-lib=static=shabal_avx");
 
-        // AVX2
         let mut config = base.clone();
         if std::env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
             config.flag("/arch:AVX2");
@@ -94,7 +88,6 @@ fn main() {
             .compile("shabal_avx2");
         println!("cargo:rustc-link-lib=static=shabal_avx2");
 
-        // AVX512
         let mut config = base.clone();
         if std::env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
             config.flag("/arch:AVX512");
