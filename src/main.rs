@@ -299,16 +299,12 @@ impl Default for AnneGuiApp {
             self.poll_progress();
             self.update_nonces_size();
 
-            // Use a scroll area for the entire content
             eframe::egui::CentralPanel::default()
                 .show(ctx, |ui| {
-                    // Add a vertical scroll area that covers the entire panel
                     eframe::egui::ScrollArea::vertical()
-                        .auto_shrink([false; 2]) // Don't shrink when content fits
+                        .auto_shrink([false; 2])
                         .show(ui, |ui| {
-                            // Main content container with padding
                             ui.vertical(|ui| {
-                                // Header with logo
                                 ui.horizontal(|ui| {
                                     display_logo(ui, ctx);
                                     ui.add_space(5.0);
@@ -343,32 +339,30 @@ impl Default for AnneGuiApp {
                             
                                 ui.add_space(15.0);
                    
-                                // Input section
                                 ui.group(|ui| {
                                     self.render_inputs(ui);
                                 });
                                 
                                 ui.add_space(10.0);
                                 
-                                // Status section
+
                                 ui.group(|ui| {
                                     self.render_status(ui);
                                 });
                                 
                                 ui.add_space(10.0);
                                 
-                                // Logs section
+    
                                 ui.group(|ui| {
                                     self.render_logs(ui);
                                 });
                                 
-                                // Add some bottom padding
+
                                 ui.add_space(20.0);
                             });
                         });
                 });
             
-            // Modal dialogs (outside the scroll area)
             self.show_stop_confirmation(ctx);     
             self.show_error_popup(ctx);
             
@@ -1319,10 +1313,8 @@ impl Default for AnneGuiApp {
                         
                         hasher.run(task);
                         
-                        // Wait for progress scaler to finish
                         let _ = progress_scaler.join();
                         
-                        // Check stop flag after each file
                         if stop_flag_clone.load(Ordering::Relaxed) {
                             let _ = tx_clone.send(ProgressUpdate::Log(format!("Stop requested at file {} of {}", current_file, count)));
                             let _ = tx_clone.send(ProgressUpdate::Error("STOP_REQUESTED".to_string()));
@@ -1331,7 +1323,6 @@ impl Default for AnneGuiApp {
                     }
                 });
             } else {
-                // Single hashing mode - also use rounded_nonces
                 let task = HasherTask {
                     numeric_id,
                     start_nonce,
