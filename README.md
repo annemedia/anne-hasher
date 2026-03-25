@@ -39,7 +39,7 @@ curl -L -o  anne-hasher-macos.zip https://github.com/annemedia/anne-hasher/relea
 ##### Windows
 Run the exe, and if you get a warning "Windows Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.", click on More info and Run anyway.
 
-Alternatively, you can avert the dumb-screen by downloading the app via PowerShell, like so:
+Alternatively, you can avert the SmartScreen by downloading the app via PowerShell, like so:
 
 ```shell
 curl -o  anne-hasher-windows.zip https://github.com/annemedia/anne-hasher/releases/download/anne-hasher-v2.0/anne-hasher-windows.zip
