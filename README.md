@@ -1,4 +1,12 @@
+ <img width="80" height="80" src="https://8upload.com/image/0d87ecdb941f1771/annehasher.png" alt="image">
+
 # ANNE Hasher - Proof of Spacetime Hasher
+
+[![License](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)  
+[![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](https://rust-lang.org)  
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
+
+
 ANNE Hasher is a GUI and command line Proof of Spacetime pre-mining/hashing tool compatible with ANNE, download the release executables for your system.
 
 ## Features
