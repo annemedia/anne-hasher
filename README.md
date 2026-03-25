@@ -17,7 +17,7 @@ To generate nonces for your ANNE Miner use the GUI or run it in a terminal/Comma
 
 ### GUI usage
 
-Note: this app is unsigned. This means Windows and macOS will harass you with an unidentified developer warning; rest assured, the app is clean.
+Note: Because ANNEWizard is open‑source software distributed without a paid code‑signing certificate, Windows and macOS may show security warnings when you first run it. This is normal. The app is safe, and the warnings only appear because our build is not signed with a widely‑trusted certificate.
 
 ##### Linux
 Make sure the app has executable permissions and open it from your file explorer.
